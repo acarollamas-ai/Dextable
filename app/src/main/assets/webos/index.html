@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>WebOS — Remote Desktop macOS</title>
+  
+  <!-- xterm.js (via CDN - Terminal Obrigatório) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.min.js"></script>
+
+  <!-- Lucide Icons (via CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- WebOS Stylesheet (CSS Variables para temas Claro/Escuro & Estética macOS) -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-dark">
+  <!-- Container principal 16:9 que se ajusta 100% ao viewport do tablet -->
+  <div id="desktop-viewport" class="desktop-container">
+
+    <!-- ======================================================== -->
+    <!-- 1. BARRA SUPERIOR (TOP BAR) FIXA ESTILO MACOS            -->
+    <!-- ======================================================== -->
+    <header id="top-bar" class="top-bar">
+      <div class="top-bar-left">
+        <!-- Menu Apple -->
+        <div class="apple-logo-btn" id="apple-menu-btn" title="Menu Apple">
+          <svg width="15" height="15" viewBox="0 0 170 170" fill="currentColor">
+            <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.6-7.77-11.72-14.19-6.09-9.5-10.88-20.17-14.38-32.02-3.5-11.85-5.25-23.01-5.25-33.48 0-14.28 3.5-26.06 10.51-35.34 7.01-9.28 15.86-13.98 26.54-14.11 4.58 0 9.77 1.25 15.58 3.75 5.8 2.5 9.4 3.75 10.8 3.75 1.8 0 5.66-1.32 11.58-3.96 5.92-2.65 11.05-3.85 15.39-3.6 13.98.74 24.63 5.93 31.95 15.58-12.26 7.42-18.28 17.65-18.06 30.68.22 10.27 4.12 18.9 11.7 25.89 7.58 6.99 16.59 10.97 27.03 11.95-2.22 6.78-4.87 13.68-7.94 20.7zM119.22 31.84c0-7.31 2.65-14.28 7.94-20.91 5.3-6.63 11.86-10.63 19.69-12 1.06 7.42-1.38 14.54-7.31 21.36-5.93 6.82-12.7 10.68-20.32 11.55z"/>
+          </svg>
+        </div>
+        <span class="app-title-bold" id="active-app-name">Desktable WebOS</span>
+        
+        <nav class="top-nav-menus">
+          <span class="menu-item" onclick="openWindow('files')">Arquivos</span>
+          <span class="menu-item" onclick="openWindow('terminal')">Terminal</span>
+          <span class="menu-item" onclick="openWindow('browser')">Navegador</span>
+          <span class="menu-item" onclick="openWindow('settings')">Configurações</span>
+          <span class="menu-item" onclick="toggleTheme()">Tema</span>
+        </nav>
+      </div>
+
+      <div class="top-bar-right">
+        <!-- Indicador de Status VPS (Online/Offline) -->
+        <div class="status-indicator-pill" id="vps-status-pill" onclick="openWindow('settings')" title="Status da VPS">
+          <span class="status-dot disconnected" id="vps-status-dot"></span>
+          <span class="status-text" id="vps-status-text">VPS Desconectada</span>
+        </div>
+
+        <!-- Botão Alternador de Tema -->
+        <button class="top-bar-btn" id="theme-toggle-btn" onclick="toggleTheme()" title="Alternar Modo Claro / Escuro">
+          <i data-lucide="moon" id="theme-icon"></i>
+        </button>
+
+        <!-- Ícones de Sistema -->
+        <div class="top-bar-icon" title="Wi-Fi Ativo">
+          <i data-lucide="wifi"></i>
+        </div>
+        <div class="top-bar-icon" title="Bateria 100%">
+          <i data-lucide="battery-charging"></i>
+        </div>
+
+        <!-- Relógio macOS em Tempo Real -->
+        <div class="top-bar-clock" id="system-clock">
+          Seg 12:00
+        </div>
+      </div>
+    </header>
+
+    <!-- ======================================================== -->
+    <!-- 2. ÁREA DE TRABALHO (DESKTOP) COM ÍCONES E JANELAS       -->
+    <!-- ======================================================== -->
+    <main id="desktop-area" class="desktop-area">
+      <!-- Ícones da Área de Trabalho -->
+      <div class="desktop-icons">
+        <div class="desktop-icon" ondblclick="openWindow('files')">
+          <div class="icon-box folder-icon"><i data-lucide="folder"></i></div>
+          <span class="icon-label">VPS Arquivos</span>
+        </div>
+        <div class="desktop-icon" ondblclick="openWindow('terminal')">
+          <div class="icon-box terminal-icon"><i data-lucide="terminal"></i></div>
+          <span class="icon-label">VPS Terminal</span>
+        </div>
+        <div class="desktop-icon" ondblclick="openWindow('browser')">
+          <div class="icon-box browser-icon"><i data-lucide="globe"></i></div>
+          <span class="icon-label">Navegador</span>
+        </div>
+        <div class="desktop-icon" ondblclick="openWindow('settings')">
+          <div class="icon-box settings-icon"><i data-lucide="settings"></i></div>
+          <span class="icon-label">Conexão VPS</span>
+        </div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- JANELA 1: TERMINAL (xterm.js + WebSocket Real)           -->
+      <!-- ======================================================== -->
+      <div id="window-terminal" class="mac-window" style="top: 50px; left: 80px; width: 750px; height: 460px;">
+        <div class="window-titlebar" onmousedown="startDrag(event, 'window-terminal')">
+          <div class="traffic-lights">
+            <span class="light close" onclick="closeWindow('terminal')"></span>
+            <span class="light minimize" onclick="minimizeWindow('terminal')"></span>
+            <span class="light maximize" onclick="maximizeWindow('terminal')"></span>
+          </div>
+          <div class="window-title">
+            <i data-lucide="terminal" class="title-icon"></i>
+            <span id="terminal-window-title">Terminal SSH — Conectando à VPS</span>
+          </div>
+          <div class="window-actions">
+            <button class="win-btn" onclick="reconnectTerminal()" title="Reconectar Terminal">
+              <i data-lucide="refresh-cw"></i>
+            </button>
+            <button class="win-btn" onclick="clearTerminal()" title="Limpar Terminal">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra rápida de atalhos e conexão do Terminal -->
+        <div class="terminal-quickbar">
+          <div class="vps-connection-info">
+            <span class="badge" id="terminal-ws-badge">WebSocket: ws://ip-da-vps:3001</span>
+          </div>
+          <div class="quick-commands">
+            <button class="cmd-pill" onclick="sendTerminalCommand('ls -la\n')">ls -la</button>
+            <button class="cmd-pill" onclick="sendTerminalCommand('pwd\n')">pwd</button>
+            <button class="cmd-pill" onclick="sendTerminalCommand('uname -a\n')">uname -a</button>
+            <button class="cmd-pill" onclick="sendTerminalCommand('df -h\n')">df -h</button>
+            <button class="cmd-pill" onclick="sendTerminalCommand('free -m\n')">free -m</button>
+            <button class="cmd-pill" onclick="sendTerminalCommand('top\n')">top</button>
+          </div>
+        </div>
+
+        <!-- Elemento de renderização do xterm.js (Obrigatório) -->
+        <div id="terminal-container" class="terminal-body"></div>
+
+        <!-- Alça de redimensionamento da janela -->
+        <div class="resize-handle" onmousedown="startResize(event, 'window-terminal')"></div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- JANELA 2: GERENCIADOR DE ARQUIVOS (HTTP Fetch Real)      -->
+      <!-- ======================================================== -->
+      <div id="window-files" class="mac-window" style="top: 80px; left: 180px; width: 820px; height: 490px;">
+        <div class="window-titlebar" onmousedown="startDrag(event, 'window-files')">
+          <div class="traffic-lights">
+            <span class="light close" onclick="closeWindow('files')"></span>
+            <span class="light minimize" onclick="minimizeWindow('files')"></span>
+            <span class="light maximize" onclick="maximizeWindow('files')"></span>
+          </div>
+          <div class="window-title">
+            <i data-lucide="folder" class="title-icon"></i>
+            <span>Gerenciador de Arquivos VPS (Fetch HTTP)</span>
+          </div>
+          <div class="window-actions">
+            <button class="win-btn" onclick="fetchFilesList(currentPath)" title="Atualizar Diretório">
+              <i data-lucide="refresh-cw"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de Navegação e Breadcrumb -->
+        <div class="files-toolbar">
+          <div class="nav-buttons">
+            <button class="tool-btn" onclick="navigateParentDirectory()" title="Subir Pasta">
+              <i data-lucide="arrow-up"></i>
+            </button>
+            <button class="tool-btn" onclick="fetchFilesList('/home')" title="Ir para /home">
+              <i data-lucide="home"></i>
+            </button>
+          </div>
+          <div class="path-bar">
+            <i data-lucide="folder-open" class="path-icon"></i>
+            <input type="text" id="files-path-input" value="/home" onkeydown="if(event.key==='Enter') fetchFilesList(this.value)">
+            <button class="go-btn" onclick="fetchFilesList(document.getElementById('files-path-input').value)">Ir</button>
+          </div>
+          <div class="files-actions">
+            <button class="tool-btn secondary" onclick="promptNewFolder()" title="Criar Nova Pasta na VPS">
+              <i data-lucide="folder-plus"></i> Nova Pasta
+            </button>
+          </div>
+        </div>
+
+        <!-- Corpo do Gerenciador de Arquivos (Sidebar de Árvore + Grade de Arquivos) -->
+        <div class="files-body">
+          <!-- Sidebar da Árvore de Diretórios -->
+          <aside class="files-sidebar">
+            <div class="sidebar-section">
+              <span class="section-title">Locais Rápidos (VPS)</span>
+              <ul class="places-list">
+                <li onclick="fetchFilesList('/')"><i data-lucide="hard-drive"></i> Raiz (/)</li>
+                <li onclick="fetchFilesList('/home')" class="active"><i data-lucide="home"></i> /home</li>
+                <li onclick="fetchFilesList('/var/www')"><i data-lucide="globe"></i> /var/www</li>
+                <li onclick="fetchFilesList('/etc')"><i data-lucide="settings"></i> /etc</li>
+                <li onclick="fetchFilesList('/tmp')"><i data-lucide="clock"></i> /tmp</li>
+              </ul>
+            </div>
+            <div class="sidebar-section">
+              <span class="section-title">Status da Conexão</span>
+              <div class="vps-sidebar-status">
+                <span class="mini-dot" id="files-status-dot"></span>
+                <span id="files-status-label">HTTP Fetch Pronto</span>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Painel Principal de Arquivos e Pastas -->
+          <div class="files-content-pane">
+            <div id="files-loading-indicator" class="loading-state" style="display: none;">
+              <i data-lucide="loader" class="spin-icon"></i>
+              <span>Carregando arquivos da VPS via HTTP fetch...</span>
+            </div>
+            <div id="files-error-state" class="error-state" style="display: none;">
+              <i data-lucide="alert-circle"></i>
+              <p id="files-error-msg">Não foi possível carregar os arquivos da VPS.</p>
+              <button class="retry-btn" onclick="fetchFilesList(currentPath)">Tentar Novamente</button>
+            </div>
+            
+            <div id="files-grid" class="files-grid">
+              <!-- Preenchido dinamicamente pela função fetchFilesList() -->
+            </div>
+          </div>
+        </div>
+
+        <div class="resize-handle" onmousedown="startResize(event, 'window-files')"></div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- MODAL: VISUALIZADOR / EDITOR DE ARQUIVOS DE TEXTO        -->
+      <!-- ======================================================== -->
+      <div id="window-editor" class="mac-window" style="top: 100px; left: 240px; width: 680px; height: 440px; display: none;">
+        <div class="window-titlebar" onmousedown="startDrag(event, 'window-editor')">
+          <div class="traffic-lights">
+            <span class="light close" onclick="closeWindow('editor')"></span>
+            <span class="light minimize" onclick="minimizeWindow('editor')"></span>
+            <span class="light maximize" onclick="maximizeWindow('editor')"></span>
+          </div>
+          <div class="window-title">
+            <i data-lucide="file-text" class="title-icon"></i>
+            <span id="editor-title">Visualizador de Texto</span>
+          </div>
+          <div class="window-actions">
+            <button class="win-btn" onclick="saveCurrentFile()" title="Salvar na VPS via HTTP">
+              <i data-lucide="save"></i>
+            </button>
+          </div>
+        </div>
+        <div class="editor-body">
+          <textarea id="editor-textarea" spellcheck="false" placeholder="Carregando conteúdo do arquivo da VPS..."></textarea>
+        </div>
+        <div class="resize-handle" onmousedown="startResize(event, 'window-editor')"></div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- JANELA 3: NAVEGADOR COM IFRAME                           -->
+      <!-- ======================================================== -->
+      <div id="window-browser" class="mac-window" style="top: 70px; left: 140px; width: 860px; height: 500px;">
+        <div class="window-titlebar" onmousedown="startDrag(event, 'window-browser')">
+          <div class="traffic-lights">
+            <span class="light close" onclick="closeWindow('browser')"></span>
+            <span class="light minimize" onclick="minimizeWindow('browser')"></span>
+            <span class="light maximize" onclick="maximizeWindow('browser')"></span>
+          </div>
+          <div class="window-title">
+            <i data-lucide="globe" class="title-icon"></i>
+            <span>Navegador Web (iframe)</span>
+          </div>
+          <div class="window-actions">
+            <button class="win-btn" onclick="openUrlInNewTab()" title="Abrir URL em nova aba">
+              <i data-lucide="external-link"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Barra de Navegação com Input de URL e Controles -->
+        <div class="browser-toolbar">
+          <div class="browser-nav-btns">
+            <button class="browser-btn" onclick="browserGoBack()" title="Voltar">
+              <i data-lucide="chevron-left"></i>
+            </button>
+            <button class="browser-btn" onclick="browserGoForward()" title="Avançar">
+              <i data-lucide="chevron-right"></i>
+            </button>
+            <button class="browser-btn" onclick="browserReload()" title="Recarregar">
+              <i data-lucide="rotate-cw"></i>
+            </button>
+          </div>
+          <div class="browser-url-bar">
+            <i data-lucide="lock" class="ssl-icon"></i>
+            <input type="text" id="browser-url-input" value="https://wikipedia.org" placeholder="Digite uma URL (ex: https://site.com) e pressione Enter" onkeydown="if(event.key==='Enter') navigateBrowser(this.value)">
+            <button class="go-btn" onclick="navigateBrowser(document.getElementById('browser-url-input').value)">Acessar</button>
+          </div>
+          <div class="browser-quick-bookmarks">
+            <button class="bk-pill" onclick="navigateBrowser('https://wikipedia.org')">Wikipedia</button>
+            <button class="bk-pill" onclick="navigateBrowser('https://duckduckgo.com')">DuckDuckGo</button>
+            <button class="bk-pill" onclick="navigateBrowser('https://debian.org')">Debian</button>
+            <button class="bk-pill" onclick="navigateBrowser('http://' + getVpsHost() + ':3000')">VPS Web</button>
+          </div>
+        </div>
+
+        <!-- Container do <iframe> obrigatório -->
+        <div class="browser-viewport">
+          <iframe id="browser-iframe" src="https://wikipedia.org" sandbox="allow-scripts allow-same-origin allow-forms allow-popups" title="Visualizador do Navegador"></iframe>
+        </div>
+
+        <div class="resize-handle" onmousedown="startResize(event, 'window-browser')"></div>
+      </div>
+
+      <!-- ======================================================== -->
+      <!-- JANELA 4: CONFIGURAÇÕES DA CONEXÃO VPS                   -->
+      <!-- ======================================================== -->
+      <div id="window-settings" class="mac-window" style="top: 90px; left: 260px; width: 620px; height: 470px;">
+        <div class="window-titlebar" onmousedown="startDrag(event, 'window-settings')">
+          <div class="traffic-lights">
+            <span class="light close" onclick="closeWindow('settings')"></span>
+            <span class="light minimize" onclick="minimizeWindow('settings')"></span>
+            <span class="light maximize" onclick="maximizeWindow('settings')"></span>
+          </div>
+          <div class="window-title">
+            <i data-lucide="settings" class="title-icon"></i>
+            <span>Configurações da Conexão VPS</span>
+          </div>
+        </div>
+
+        <div class="settings-body">
+          <div class="settings-card">
+            <h3><i data-lucide="server"></i> Endereço da VPS (Backend)</h3>
+            <p class="settings-desc">
+              Insira o IP ou domínio da sua VPS remota onde o servidor Node.js backend está em execução.
+            </p>
+
+            <div class="form-group">
+              <label for="vps-ip-input">IP ou Domínio da VPS:</label>
+              <!-- ONDE O USUÁRIO INSERE O IP DA VPS -->
+              <input type="text" id="vps-ip-input" class="form-input" placeholder="ex: 192.168.1.100 ou meu-vps.com" value="192.168.1.100">
+              <small class="field-hint">Altere para o IP público ou local da sua VPS.</small>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="vps-ws-port">Porta WebSocket (Terminal):</label>
+                <input type="number" id="vps-ws-port" class="form-input" value="3001">
+              </div>
+              <div class="form-group">
+                <label for="vps-http-port">Porta HTTP (Arquivos API):</label>
+                <input type="number" id="vps-http-port" class="form-input" value="3000">
+              </div>
+            </div>
+
+            <div class="settings-actions">
+              <button class="primary-btn" onclick="saveVpsConfig()">
+                <i data-lucide="check"></i> Salvar e Reconectar
+              </button>
+              <button class="secondary-btn" onclick="testVpsConnection()">
+                <i data-lucide="activity"></i> Testar Conexão
+              </button>
+            </div>
+
+            <div id="vps-test-result" class="test-result-box" style="display: none;"></div>
+          </div>
+
+          <div class="settings-card">
+            <h3><i data-lucide="terminal"></i> Como Iniciar o Backend na sua VPS</h3>
+            <p class="settings-desc">
+              No terminal da sua VPS Linux, instale e execute o script <code>server.js</code> disponibilizado:
+            </p>
+            <pre class="code-block">git clone / copie os arquivos da VPS
+npm install express ws node-pty cors
+node server.js</pre>
+          </div>
+        </div>
+
+        <div class="resize-handle" onmousedown="startResize(event, 'window-settings')"></div>
+      </div>
+    </main>
+
+    <!-- ======================================================== -->
+    <!-- 3. DOCK INFERIOR ESTILO MACOS                            -->
+    <!-- ======================================================== -->
+    <footer id="dock-container" class="dock-container">
+      <div class="mac-dock" id="mac-dock">
+        <!-- Ícone Arquivos -->
+        <div class="dock-item" onclick="openWindow('files')" data-app="files" title="Arquivos VPS">
+          <div class="dock-icon-wrapper folder-bg">
+            <i data-lucide="folder"></i>
+          </div>
+          <span class="dock-tooltip">Arquivos</span>
+          <span class="dock-dot" id="dot-files"></span>
+        </div>
+
+        <!-- Ícone Terminal -->
+        <div class="dock-item" onclick="openWindow('terminal')" data-app="terminal" title="Terminal SSH VPS (xterm.js)">
+          <div class="dock-icon-wrapper terminal-bg">
+            <i data-lucide="terminal"></i>
+          </div>
+          <span class="dock-tooltip">Terminal</span>
+          <span class="dock-dot" id="dot-terminal"></span>
+        </div>
+
+        <!-- Ícone Navegador -->
+        <div class="dock-item" onclick="openWindow('browser')" data-app="browser" title="Navegador Web (iframe)">
+          <div class="dock-icon-wrapper browser-bg">
+            <i data-lucide="globe"></i>
+          </div>
+          <span class="dock-tooltip">Navegador</span>
+          <span class="dock-dot" id="dot-browser"></span>
+        </div>
+
+        <div class="dock-separator"></div>
+
+        <!-- Ícone Configurações -->
+        <div class="dock-item" onclick="openWindow('settings')" data-app="settings" title="Configurações da VPS">
+          <div class="dock-icon-wrapper settings-bg">
+            <i data-lucide="settings"></i>
+          </div>
+          <span class="dock-tooltip">Configurações</span>
+          <span class="dock-dot" id="dot-settings"></span>
+        </div>
+
+        <!-- Alternar Tema -->
+        <div class="dock-item" onclick="toggleTheme()" title="Alternar Modo Claro/Escuro">
+          <div class="dock-icon-wrapper theme-bg">
+            <i data-lucide="sun-medium"></i>
+          </div>
+          <span class="dock-tooltip">Modo Claro/Escuro</span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Lógica da Aplicação WebOS (xterm.js, WebSocket, Fetch API, Gerenciamento de Janelas) -->
+  <script src="app.js"></script>
+</body>
+</html>

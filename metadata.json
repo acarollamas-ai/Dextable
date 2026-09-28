@@ -1,0 +1,8 @@
+{
+  "name": "Desktable OS",
+  "description": "A premium desktop-style interface for tablets, featuring a fluid dock, window management, and a highly customizable workspace environment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

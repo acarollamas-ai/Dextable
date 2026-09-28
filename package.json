@@ -1,0 +1,17 @@
+{
+  "name": "webos-vps-backend",
+  "version": "1.0.0",
+  "description": "Backend Node.js para WebOS Desktop Remoto com Terminal WebSocket e Gerenciador de Arquivos HTTP",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "node-pty": "^1.0.2",
+    "ws": "^8.17.0"
+  },
+  "author": "",
+  "license": "MIT"
+}
